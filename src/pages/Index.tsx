@@ -3,23 +3,7 @@ import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 
 const Index = () => {
-  const featuredPoems = [
-    {
-      title: "Тишина",
-      excerpt: "В тишине утреннего сада\nЯ слышу голос времени,\nКак листья шепчут о прошлом\nИ ветер рассказывает будущее...",
-      date: "15 июля 2024"
-    },
-    {
-      title: "Звёзды над городом",
-      excerpt: "Неоновые звёзды города\nОтражаются в лужах дождя,\nИ каждая капля хранит\nОтражение чьей-то мечты...",
-      date: "8 июля 2024"
-    },
-    {
-      title: "Память",
-      excerpt: "Память — это океан,\nГде волны прошлого\nНакатывают на берег настоящего,\nОставляя ракушки воспоминаний...",
-      date: "1 июля 2024"
-    }
-  ];
+  const featuredPoems = [];
 
   return (
     <div className="min-h-screen bg-white">
@@ -70,35 +54,14 @@ const Index = () => {
             </Button>
           </div>
           
-          <div className="grid gap-8 md:gap-12">
-            {featuredPoems.map((poem, index) => (
-              <Card key={index} className="border-none shadow-none hover:shadow-lg transition-all duration-300 cursor-pointer group">
-                <CardContent className="p-8">
-                  <div className="flex items-start justify-between mb-4">
-                    <h4 className="text-2xl font-light text-gray-800 group-hover:text-gray-600 transition-colors">
-                      {poem.title}
-                    </h4>
-                    <span className="text-sm text-gray-400 font-light">{poem.date}</span>
-                  </div>
-                  <p className="text-gray-600 leading-relaxed font-light whitespace-pre-line mb-6">
-                    {poem.excerpt}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <Button variant="ghost" className="text-gray-600 hover:text-gray-800 p-0 h-auto font-light">
-                      Читать полностью
-                    </Button>
-                    <div className="flex space-x-4">
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
-                        <Icon name="Heart" size={16} />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
-                        <Icon name="Share2" size={16} />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="text-center py-12">
+            <Icon name="BookOpen" size={48} className="text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg font-light">
+              Здесь будут ваши стихотворения
+            </p>
+            <p className="text-gray-400 text-sm mt-2">
+              Добавьте первое стихотворение, чтобы начать делиться творчеством
+            </p>
           </div>
         </div>
       </section>
