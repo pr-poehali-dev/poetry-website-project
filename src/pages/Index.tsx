@@ -19,10 +19,37 @@ const Index = () => {
     tagline: 'Слова, рождённые в тишине',
     bio: 'Добро пожаловать в мой поэтический мир, где каждое стихотворение — это попытка поймать мгновение и превратить его в вечность.',
     theme: 'minimal',
-    fontStyle: 'serif'
+    fontStyle: 'serif',
+    primaryColor: '#2D3748',
+    secondaryColor: '#4A5568',
+    accentColor: '#9F7AEA',
+    backgroundColor: '#FFFFFF',
+    textColor: '#2D3748',
+    headerSize: 'large',
+    contentWidth: 'wide',
+    borderRadius: 'medium',
+    animation: true,
+    socialLinks: {
+      instagram: '',
+      twitter: '',
+      email: '',
+      telegram: ''
+    },
+    seoTitle: '',
+    seoDescription: '',
+    seoKeywords: '',
+    commentsEnabled: true,
+    contactEnabled: true,
+    newsletterEnabled: true
   });
   const [newPoem, setNewPoem] = useState({ title: '', content: '', date: '' });
   const [showAddPoem, setShowAddPoem] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [newComment, setNewComment] = useState({ name: '', email: '', text: '', poemId: null });
+  const [newMessage, setNewMessage] = useState({ name: '', email: '', subject: '', message: '', type: 'general' });
+  const [showComments, setShowComments] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
   
   const addPoem = () => {
     if (newPoem.title && newPoem.content) {
@@ -38,6 +65,39 @@ const Index = () => {
   
   const updateSiteSettings = (key, value) => {
     setSiteSettings(prev => ({ ...prev, [key]: value }));
+  };
+  
+  const updateSocialLinks = (platform, url) => {
+    setSiteSettings(prev => ({
+      ...prev,
+      socialLinks: { ...prev.socialLinks, [platform]: url }
+    }));
+  };
+  
+  const addComment = () => {
+    if (newComment.name && newComment.text) {
+      setComments([...comments, { ...newComment, id: Date.now(), date: new Date().toLocaleDateString('ru-RU') }]);
+      setNewComment({ name: '', email: '', text: '', poemId: null });
+    }
+  };
+  
+  const addMessage = () => {
+    if (newMessage.name && newMessage.message) {
+      setMessages([...messages, { ...newMessage, id: Date.now(), date: new Date().toLocaleDateString('ru-RU'), status: 'new' }]);
+      setNewMessage({ name: '', email: '', subject: '', message: '', type: 'general' });
+    }
+  };
+  
+  const deleteComment = (id) => {
+    setComments(comments.filter(comment => comment.id !== id));
+  };
+  
+  const deleteMessage = (id) => {
+    setMessages(messages.filter(message => message.id !== id));
+  };
+  
+  const markMessageAsRead = (id) => {
+    setMessages(messages.map(msg => msg.id === id ? { ...msg, status: 'read' } : msg));
   };
 
   return (
@@ -237,10 +297,27 @@ const Index = () => {
             <h3 className="text-3xl font-light text-gray-800 mb-8">Настройки сайта</h3>
             
             <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-6 text-sm">
                 <TabsTrigger value="general">Общие</TabsTrigger>
-                <TabsTrigger value="appearance">Внешний вид</TabsTrigger>
+                <TabsTrigger value="design">Дизайн</TabsTrigger>
                 <TabsTrigger value="content">Контент</TabsTrigger>
+                <TabsTrigger value="social">Соцсети</TabsTrigger>
+                <TabsTrigger value="discussions" className="relative">
+                  Обсуждения
+                  {comments.length > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {comments.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="messages" className="relative">
+                  Сообщения
+                  {messages.filter(m => m.status === 'new').length > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {messages.filter(m => m.status === 'new').length}
+                    </span>
+                  )}
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="general" className="space-y-6 mt-6">
@@ -263,35 +340,194 @@ const Index = () => {
                       placeholder="Ваше имя"
                     />
                   </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="seoTitle">SEO заголовок</Label>
+                    <Input 
+                      id="seoTitle"
+                      value={siteSettings.seoTitle}
+                      onChange={(e) => updateSiteSettings('seoTitle', e.target.value)}
+                      placeholder="Заголовок для поисковых систем"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="seoDescription">Описание для поисковиков</Label>
+                    <Textarea 
+                      id="seoDescription"
+                      value={siteSettings.seoDescription}
+                      onChange={(e) => updateSiteSettings('seoDescription', e.target.value)}
+                      placeholder="Краткое описание вашего сайта"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="seoKeywords">Ключевые слова</Label>
+                    <Input 
+                      id="seoKeywords"
+                      value={siteSettings.seoKeywords}
+                      onChange={(e) => updateSiteSettings('seoKeywords', e.target.value)}
+                      placeholder="поэзия, стихи, литература"
+                    />
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h4 className="text-lg font-medium mb-4">Функциональность</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="comments">Комментарии к стихам</Label>
+                      <Switch 
+                        id="comments"
+                        checked={siteSettings.commentsEnabled}
+                        onCheckedChange={(checked) => updateSiteSettings('commentsEnabled', checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="contact">Форма обратной связи</Label>
+                      <Switch 
+                        id="contact"
+                        checked={siteSettings.contactEnabled}
+                        onCheckedChange={(checked) => updateSiteSettings('contactEnabled', checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="newsletter">Подписка на новости</Label>
+                      <Switch 
+                        id="newsletter"
+                        checked={siteSettings.newsletterEnabled}
+                        onCheckedChange={(checked) => updateSiteSettings('newsletterEnabled', checked)}
+                      />
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
               
-              <TabsContent value="appearance" className="space-y-6 mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <TabsContent value="design" className="space-y-6 mt-6">
+                <div className="space-y-6">
                   <div>
-                    <Label htmlFor="theme">Тема оформления</Label>
-                    <Select value={siteSettings.theme} onValueChange={(value) => updateSiteSettings('theme', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Выберите тему" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="minimal">Минимализм</SelectItem>
-                        <SelectItem value="classic">Классика</SelectItem>
-                        <SelectItem value="modern">Современный</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <h4 className="text-lg font-medium mb-4">Цветовая палитра</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="primaryColor">Основной цвет</Label>
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="color" 
+                            value={siteSettings.primaryColor}
+                            onChange={(e) => updateSiteSettings('primaryColor', e.target.value)}
+                            className="w-10 h-10 rounded border"
+                          />
+                          <Input 
+                            value={siteSettings.primaryColor}
+                            onChange={(e) => updateSiteSettings('primaryColor', e.target.value)}
+                            placeholder="#2D3748"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="accentColor">Акцентный цвет</Label>
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="color" 
+                            value={siteSettings.accentColor}
+                            onChange={(e) => updateSiteSettings('accentColor', e.target.value)}
+                            className="w-10 h-10 rounded border"
+                          />
+                          <Input 
+                            value={siteSettings.accentColor}
+                            onChange={(e) => updateSiteSettings('accentColor', e.target.value)}
+                            placeholder="#9F7AEA"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="backgroundColor">Фон сайта</Label>
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="color" 
+                            value={siteSettings.backgroundColor}
+                            onChange={(e) => updateSiteSettings('backgroundColor', e.target.value)}
+                            className="w-10 h-10 rounded border"
+                          />
+                          <Input 
+                            value={siteSettings.backgroundColor}
+                            onChange={(e) => updateSiteSettings('backgroundColor', e.target.value)}
+                            placeholder="#FFFFFF"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                  
                   <div>
-                    <Label htmlFor="fontStyle">Стиль шрифта</Label>
-                    <Select value={siteSettings.fontStyle} onValueChange={(value) => updateSiteSettings('fontStyle', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Выберите шрифт" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="serif">С засечками (для поэзии)</SelectItem>
-                        <SelectItem value="sans">Без засечек (современный)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <h4 className="text-lg font-medium mb-4">Типографика</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="fontStyle">Стиль шрифта</Label>
+                        <Select value={siteSettings.fontStyle} onValueChange={(value) => updateSiteSettings('fontStyle', value)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="serif">С засечками (классика)</SelectItem>
+                            <SelectItem value="sans">Без засечек (современный)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="headerSize">Размер заголовков</Label>
+                        <Select value={siteSettings.headerSize} onValueChange={(value) => updateSiteSettings('headerSize', value)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="small">Маленькие</SelectItem>
+                            <SelectItem value="medium">Средние</SelectItem>
+                            <SelectItem value="large">Большие</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-lg font-medium mb-4">Макет</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="contentWidth">Ширина контента</Label>
+                        <Select value={siteSettings.contentWidth} onValueChange={(value) => updateSiteSettings('contentWidth', value)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="narrow">Узкая</SelectItem>
+                            <SelectItem value="medium">Средняя</SelectItem>
+                            <SelectItem value="wide">Широкая</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="borderRadius">Скругление углов</Label>
+                        <Select value={siteSettings.borderRadius} onValueChange={(value) => updateSiteSettings('borderRadius', value)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Нет</SelectItem>
+                            <SelectItem value="small">Маленькое</SelectItem>
+                            <SelectItem value="medium">Среднее</SelectItem>
+                            <SelectItem value="large">Большое</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="animation">Анимации</Label>
+                    <Switch 
+                      id="animation"
+                      checked={siteSettings.animation}
+                      onCheckedChange={(checked) => updateSiteSettings('animation', checked)}
+                    />
                   </div>
                 </div>
               </TabsContent>
@@ -311,6 +547,182 @@ const Index = () => {
                       Добавляйте, редактируйте и удаляйте стихотворения прямо в режиме редактирования
                     </div>
                   </div>
+                </div>
+                
+                {poems.length > 0 && (
+                  <div className="bg-white p-6 rounded-lg border">
+                    <h4 className="text-lg font-medium mb-4">Список стихотворений</h4>
+                    <div className="space-y-3">
+                      {poems.map((poem, index) => (
+                        <div key={poem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                          <div>
+                            <h5 className="font-medium">{poem.title}</h5>
+                            <p className="text-sm text-gray-600">{poem.date}</p>
+                          </div>
+                          <Button 
+                            onClick={() => deletePoem(poem.id)}
+                            variant="ghost" 
+                            size="sm"
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Icon name="Trash2" size={16} />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="social" className="space-y-6 mt-6">
+                <div className="bg-white p-6 rounded-lg border">
+                  <h4 className="text-lg font-medium mb-4">Социальные сети</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="instagram">Ссылка на Instagram</Label>
+                      <Input 
+                        id="instagram"
+                        value={siteSettings.socialLinks.instagram}
+                        onChange={(e) => updateSocialLinks('instagram', e.target.value)}
+                        placeholder="https://instagram.com/username"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="twitter">Ссылка на Twitter</Label>
+                      <Input 
+                        id="twitter"
+                        value={siteSettings.socialLinks.twitter}
+                        onChange={(e) => updateSocialLinks('twitter', e.target.value)}
+                        placeholder="https://twitter.com/username"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Электронная почта</Label>
+                      <Input 
+                        id="email"
+                        value={siteSettings.socialLinks.email}
+                        onChange={(e) => updateSocialLinks('email', e.target.value)}
+                        placeholder="your@email.com"
+                        type="email"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="telegram">Телеграм</Label>
+                      <Input 
+                        id="telegram"
+                        value={siteSettings.socialLinks.telegram}
+                        onChange={(e) => updateSocialLinks('telegram', e.target.value)}
+                        placeholder="https://t.me/username"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="discussions" className="space-y-6 mt-6">
+                <div className="bg-white p-6 rounded-lg border">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-medium">Обсуждения и комментарии</h4>
+                    <span className="text-sm text-gray-600">Всего: {comments.length}</span>
+                  </div>
+                  
+                  {comments.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Icon name="MessageCircle" size={48} className="mx-auto mb-4 text-gray-300" />
+                      <p>Пока нет комментариев</p>
+                      <p className="text-sm text-gray-400 mt-2">Комментарии к стихам будут отображаться здесь</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {comments.map((comment) => (
+                        <div key={comment.id} className="p-4 bg-gray-50 rounded border-l-4 border-blue-500">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">{comment.name}</span>
+                              <span className="text-sm text-gray-500">{comment.date}</span>
+                            </div>
+                            <Button 
+                              onClick={() => deleteComment(comment.id)}
+                              variant="ghost" 
+                              size="sm"
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Icon name="Trash2" size={16} />
+                            </Button>
+                          </div>
+                          <p className="text-gray-700">{comment.text}</p>
+                          {comment.email && (
+                            <p className="text-xs text-gray-500 mt-2">{comment.email}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="messages" className="space-y-6 mt-6">
+                <div className="bg-white p-6 rounded-lg border">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-medium">Сообщения от читателей</h4>
+                    <div className="flex items-center space-x-4">
+                      <span className="text-sm text-gray-600">Всего: {messages.length}</span>
+                      <span className="text-sm text-red-600">Новых: {messages.filter(m => m.status === 'new').length}</span>
+                    </div>
+                  </div>
+                  
+                  {messages.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Icon name="Mail" size={48} className="mx-auto mb-4 text-gray-300" />
+                      <p>Пока нет сообщений</p>
+                      <p className="text-sm text-gray-400 mt-2">Сообщения от читателей будут отображаться здесь</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {messages.map((message) => (
+                        <div key={message.id} className={`p-4 rounded border-l-4 ${
+                          message.status === 'new' ? 'bg-blue-50 border-blue-500' : 'bg-gray-50 border-gray-300'
+                        }`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">{message.name}</span>
+                              <span className="text-sm text-gray-500">{message.date}</span>
+                              {message.status === 'new' && (
+                                <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">NEW</span>
+                              )}
+                            </div>
+                            <div className="flex space-x-2">
+                              {message.status === 'new' && (
+                                <Button 
+                                  onClick={() => markMessageAsRead(message.id)}
+                                  variant="outline" 
+                                  size="sm"
+                                >
+                                  Отметить как прочитанное
+                                </Button>
+                              )}
+                              <Button 
+                                onClick={() => deleteMessage(message.id)}
+                                variant="ghost" 
+                                size="sm"
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <Icon name="Trash2" size={16} />
+                              </Button>
+                            </div>
+                          </div>
+                          {message.subject && (
+                            <h5 className="font-medium text-gray-800 mb-1">{message.subject}</h5>
+                          )}
+                          <p className="text-gray-700 mb-2">{message.message}</p>
+                          <div className="flex items-center space-x-4 text-xs text-gray-500">
+                            {message.email && <span>{message.email}</span>}
+                            <span className="capitalize">Тип: {message.type === 'general' ? 'Общее' : message.type === 'idea' ? 'Идея' : 'Отзыв'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
